@@ -35,21 +35,22 @@
       predictLoop();
     }
 
-    // 예측 루프
-    function predictLoop() {
-      const tensor = tf.browser.fromPixels(webcamElement)
-        .resizeNearestNeighbor([224, 224])
-        .toFloat()
-        .expandDims();
-      model.predict(tensor).data().then(prediction => {
-        const topPrediction = Array.from(prediction)
-          .map((p, i) => ({ probability: p, className: i }))
-          .sort((a, b) => b.probability - a.probability)[0];
-        predictionResult.innerText = `Predicted class: ${topPrediction.className} with probability ${topPrediction.probability}`;
-        tf.dispose(tensor);
-        requestAnimationFrame(predictLoop);
-      });
-    }
+    
+     // 예측 루프
+  function predictLoop() {
+    const tensor = tf.browser.fromPixels(webcamElement)
+      .resizeNearestNeighbor([224, 224])
+      .toFloat()
+      .expandDims();
+    model.predict(tensor).then(prediction => {
+      const probabilities = prediction.dataSync(); // 예측 확률을 동기적으로 가져옵니다.
+      const topPredictionIndex = probabilities.indexOf(Math.max(...probabilities)); // 가장 높은 확률의 인덱스를 찾습니다.
+      predictionResult.innerText = `Predicted class: ${topPredictionIndex} with probability ${probabilities[topPredictionIndex]}`;
+      tf.dispose(tensor);
+      requestAnimationFrame(predictLoop);
+    });
+  }
+
 
     loadModelAndSetupWebcam();
   </script>
