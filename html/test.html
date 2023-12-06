@@ -26,7 +26,7 @@
         // Refer to tmImage.loadFromFiles() in the API to support files from a file picker
         // or files from your local hard drive
         // Note: the pose library adds "tmImage" object to your window (window.tmImage)
-        model = await tmImage.load('modeljs/model.json');
+        model = await tmImage.load('https://github.com/KalRankNe/AI_V1/blob/1537d0edc401e3d29d1a84860c8895b9da84b731/modeljs/model.json');
         maxPredictions = model.getTotalClasses();
 
         // Convenience function to setup a webcam
