@@ -36,7 +36,9 @@
     }
 
     
-   // 예측 루프
+const classNames = ['종이', '종이팩', '종이컵', '캔류', '재사용 유리', '갈색 유리', '녹색 유리', '백색 유리', '기타유리', '페트', '플라스틱', '비닐', '종이 + 이물질', '종이컵 + 이물질', '캔 + 이물질', '기타유리 + 이물질', '페트 + 이물질', '플라스틱 + 이물질', '비닐 + 이물질', '재사용 유리 + 다중포장재', '갈색 유리 + 다중포장재', '녹색 유리 + 다중포장재', '백색 유리 + 다중포장재', '백색 유리 + 다중포장재', '페트 + 다중포장재', '흰색 스티로폼', '컬러 스티로폼', '스티로폼 + 이물질', '건전지']; // 클래스 이름 배열
+
+// 예측 루프
 function predictLoop() {
   if (webcamElement.readyState === 4) { // 웹캠이 준비되었는지 확인
     const tensor = tf.browser.fromPixels(webcamElement)
@@ -46,7 +48,8 @@ function predictLoop() {
     const prediction = model.predict(tensor);
     prediction.data().then(probabilities => { // 비동기적으로 예측 결과를 가져옵니다.
       const topPredictionIndex = probabilities.indexOf(Math.max(...probabilities)); // 가장 높은 확률의 인덱스를 찾습니다.
-      predictionResult.innerText = `Predicted class: ${topPredictionIndex} with probability ${probabilities[topPredictionIndex]}`;
+      const className = classNames[topPredictionIndex]; // 예측된 클래스 인덱스에 해당하는 클래스 이름을 가져옵니다.
+      predictionResult.innerText = `Predicted class: ${className} with probability ${probabilities[topPredictionIndex]}`;
       tf.dispose(tensor);
       requestAnimationFrame(predictLoop); // 다음 프레임을 위해 예측 루프를 계속합니다.
     });
