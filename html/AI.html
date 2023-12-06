@@ -19,11 +19,9 @@
       try {
         const stream = await navigator.mediaDevices.getUserMedia({ video: true });
         webcamElement.srcObject = stream;
-        return new Promise((resolve) => {
-          webcamElement.onloadedmetadata = () => {
-            resolve();
-          };
-        });
+        webcamElement.onloadedmetadata = () => {
+          webcamElement.play();
+        };
       } catch (e) {
         console.error(e);
         alert('Webcam access denied.');
