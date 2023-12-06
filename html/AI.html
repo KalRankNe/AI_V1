@@ -37,7 +37,7 @@
 
     // 모델 로드 및 웹캠 설정
     async function loadModelAndSetupWebcam() {
-      model = await tf.loadLayersModel('path_to_tfjs_model/model.json');
+      model = await tf.loadLayersModel('modeljs/model.json');
       await setupWebcam();
       while (true) {
         const tensor = tf.browser.fromPixels(webcamElement)
