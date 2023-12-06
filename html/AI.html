@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Real-time Image Classification with TensorFlow.js</title>
+  <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@latest"></script>
+</head>
+<body>
+  <h1>Real-time Image Classification with TensorFlow.js</h1>
+  <video id="webcam" autoplay playsinline width="224" height="224"></video>
+  <div id="prediction-result"></div>
+
+  <script>
+    let model;
+    const webcamElement = document.getElementById('webcam');
+    const predictionResult = document.getElementById('prediction-result');
+
+    // 웹캠 스트리밍 시작
+    async function setupWebcam() {
+      return new Promise((resolve, reject) => {
+        const navigatorAny = navigator;
+        navigator.getUserMedia = navigator.getUserMedia ||
+                                 navigatorAny.webkitGetUserMedia ||
+                                 navigatorAny.mozGetUserMedia ||
+                                 navigatorAny.msGetUserMedia;
+        if (navigator.getUserMedia) {
+          navigator.getUserMedia({video: true},
+            stream => {
+              webcamElement.srcObject = stream;
+              webcamElement.addEventListener('loadeddata', () => resolve(), false);
+            },
+            error => reject());
+        } else {
+          reject();
+        }
+      });
+    }
+
+    // 모델 로드 및 웹캠 설정
+    async function loadModelAndSetupWebcam() {
+      model = await tf.loadLayersModel('path_to_tfjs_model/model.json');
+      await setupWebcam();
+      while (true) {
+        const tensor = tf.browser.fromPixels(webcamElement)
+          .resizeNearestNeighbor([224, 224])
+          .toFloat()
+          .expandDims();
+        const prediction = await model.predict(tensor).data();
+        const topPrediction = Array.from(prediction)
+          .map((p, i) => ({ probability: p, className: i }))
+          .sort((a, b) => b.probability - a.probability)[0];
+        predictionResult.innerText = `Predicted class: ${topPrediction.className} with probability ${topPrediction.probability}`;
+        tf.dispose(tensor);
+        await tf.nextFrame();
+      }
+    }
+
+    loadModelAndSetupWebcam();
+  </script>
+</body>
+</html>
