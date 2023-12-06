@@ -36,15 +36,15 @@
     }
 
     
-     // 예측 루프
+   // 예측 루프
 function predictLoop() {
   if (webcamElement.readyState === 4) { // 웹캠이 준비되었는지 확인
     const tensor = tf.browser.fromPixels(webcamElement)
       .resizeNearestNeighbor([224, 224])
       .toFloat()
       .expandDims();
-    model.predict(tensor).then(prediction => {
-      const probabilities = prediction.dataSync(); // 예측 확률을 동기적으로 가져옵니다.
+    const prediction = model.predict(tensor);
+    prediction.data().then(probabilities => { // 비동기적으로 예측 결과를 가져옵니다.
       const topPredictionIndex = probabilities.indexOf(Math.max(...probabilities)); // 가장 높은 확률의 인덱스를 찾습니다.
       predictionResult.innerText = `Predicted class: ${topPredictionIndex} with probability ${probabilities[topPredictionIndex]}`;
       tf.dispose(tensor);
@@ -54,6 +54,7 @@ function predictLoop() {
     requestAnimationFrame(predictLoop); // 웹캠이 준비되지 않았다면, 다시 시도합니다.
   }
 }
+
 
 
     loadModelAndSetupWebcam();
