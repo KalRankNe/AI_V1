@@ -1,69 +1,60 @@
 <!DOCTYPE html>
 <html>
-    <head>
-        <meta name="viewport" content="width=device-width, initial-scale=1" charset="utf-8">
-        <div>Teachable Machine Image Model</div>
-<button type="button" style="width:200px; height:25px;" onclick="init()">Start</button>
-<div id="webcam-container"></div>
-<div id="label-container"></div>
-<script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@latest/dist/tf.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/@teachablemachine/image@latest/dist/teachablemachine-image.min.js"></script>
-<script type="text/javascript">
-    // More API functions here:
-    // https://github.com/googlecreativelab/teachablemachine-community/tree/master/libraries/image
+<head>
+  <title>Image Classification with TensorFlow.js</title>
+  <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@latest"></script>
+</head>
+<body>
+  <h1>Image Classification with TensorFlow.js</h1>
+  <input type="file" id="image-upload" />
+  <button id="predict-button">Predict</button>
+  <div id="prediction-result"></div>
 
-    // the link to your model provided by Teachable Machine export panel
-    //const URL = "https://teachablemachine.withgoogle.com/models/al237yezx/";
+  <script>
+    let model;
+    const imageUpload = document.getElementById('image-upload');
+    const predictButton = document.getElementById('predict-button');
+    const predictionResult = document.getElementById('prediction-result');
 
-    let model, webcam, labelContainer, maxPredictions;
+    // 모델 로드
+    async function loadModel() {
+      model = await tf.loadLayersModel('../model/model.json');
+      console.log('Model loaded.');
+    }
+      const classNames = ['종이', '종이팩', '종이컵', '캔류', '재사용 유리', '갈색 유리', '녹색 유리', '백색 유리', '기타유리', '페트', '플라스틱', '비닐', '종이 + 이물질', '종이컵 + 이물질', '캔 + 이물질', '기타유리 + 이물질', '페트 + 이물질', '플라스틱 + 이물질', '비닐 + 이물질', '재사용 유리 + 다중포장재', '갈색 유리 + 다중포장재', '녹색 유리 + 다중포장재', '백색 유리 + 다중포장재', '백색 유리 + 다중포장재', '페트 + 다중포장재', '흰색 스티로폼', '컬러 스티로폼', '스티로폼 + 이물질', '건전지']; // 클래스 이름 배열
 
-    // Load the image model and setup the webcam
-    async function init() {
-       // const modelURL = URL + "model.json";
-       // const metadataURL = URL + "metadata.json";
-
-        // load the model and metadata
-        // Refer to tmImage.loadFromFiles() in the API to support files from a file picker
-        // or files from your local hard drive
-        // Note: the pose library adds "tmImage" object to your window (window.tmImage)
-        model = await tmImage.load('../modeljs/model.json');
-        maxPredictions = model.getTotalClasses();
-
-        // Convenience function to setup a webcam
-        const flip = true; // whether to flip the webcam
-        webcam = new tmImage.Webcam(270, 200, flip); // width, height, flip
-        await webcam.setup(); // request access to the webcam
-        await webcam.play();
-        window.requestAnimationFrame(loop);
-
-        // append elements to the DOM
-        document.getElementById("webcam-container").appendChild(webcam.canvas);
-        labelContainer = document.getElementById("label-container");
-        for (let i = 0; i < maxPredictions; i++) { // and class labels
-            labelContainer.appendChild(document.createElement("div"));
-        }
+    // 이미지 예측
+    async function predictImage(imageElement) {
+      let tensor = tf.browser.fromPixels(imageElement)
+        .resizeNearestNeighbor([224, 224])
+        .toFloat()
+        .expandDims();
+      let prediction = await model.predict(tensor).data();
+      let topPrediction = Array.from(prediction)
+        .map((p, i) => ({ probability: p, className: i }))
+        .sort((a, b) => b.probability - a.probability)[0];
+      predictionResult.innerText = `Predicted class: ${topPrediction.className} with probability ${topPrediction.probability}`;
     }
 
-    async function loop() {
-        webcam.update(); // update the webcam frame
-        await predict();
-        window.requestAnimationFrame(loop);
-    }
+    // 이미지 업로드 이벤트
+    imageUpload.addEventListener('change', (event) => {
+      const reader = new FileReader();
+      reader.onload = () => {
+        const img = new Image();
+        img.src = reader.result;
+        img.onload = () => predictImage(img);
+      };
+      reader.readAsDataURL(event.target.files[0]);
+    });
 
-    // run the webcam image through the image model
-    async function predict() {
-        // predict can take in an image, video or canvas html element
-        const prediction = await model.predict(webcam.canvas);
-        for (let i = 0; i < maxPredictions; i++) {
-            const classPrediction =
-                prediction[i].className + ": " + prediction[i].probability.toFixed(2);
-            labelContainer.childNodes[i].innerHTML = classPrediction;
-        }
-    }
-</script>
+    // 예측 버튼 이벤트
+    predictButton.addEventListener('click', () => {
+      const imageElement = document.createElement('img');
+      imageElement.src = imageUpload.value;
+      predictImage(imageElement);
+    });
 
-    </head>
-    <body>
-
-    </body>
+    loadModel();
+  </script>
+</body>
 </html>
