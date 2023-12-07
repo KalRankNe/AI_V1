@@ -9,19 +9,23 @@
   <input type="file" id="image-upload" />
   <button id="predict-button">Predict</button>
   <div id="prediction-result"></div>
+  <img id="uploaded-image" style="max-width: 500px; display: none;" /> <!-- 업로드된 이미지를 표시할 태그 -->
 
   <script>
     let model;
+    let uploadedImageSrc; // 업로드된 이미지의 데이터 URL을 저장할 변수
     const imageUpload = document.getElementById('image-upload');
     const predictButton = document.getElementById('predict-button');
     const predictionResult = document.getElementById('prediction-result');
+    const uploadedImage = document.getElementById('uploaded-image'); // 업로드된 이미지를 표시할 태그
 
     // 모델 로드
     async function loadModel() {
       model = await tf.loadLayersModel('../modeljs/model.json');
       console.log('Model loaded.');
     }
-      const classNames = ['종이', '종이팩', '종이컵', '캔류', '재사용 유리', '갈색 유리', '녹색 유리', '백색 유리', '기타유리', '페트', '플라스틱', '비닐', '종이 + 이물질', '종이컵 + 이물질', '캔 + 이물질', '기타유리 + 이물질', '페트 + 이물질', '플라스틱 + 이물질', '비닐 + 이물질', '재사용 유리 + 다중포장재', '갈색 유리 + 다중포장재', '녹색 유리 + 다중포장재', '백색 유리 + 다중포장재', '백색 유리 + 다중포장재', '페트 + 다중포장재', '흰색 스티로폼', '컬러 스티로폼', '스티로폼 + 이물질', '건전지']; // 클래스 이름 배열
+
+    const classNames = ['종이', '종이팩', '종이컵', '캔류', '재사용 유리', '갈색 유리', '녹색 유리', '백색 유리', '기타유리', '페트', '플라스틱', '비닐', '종이 + 이물질', '종이컵 + 이물질', '캔 + 이물질', '기타유리 + 이물질', '페트 + 이물질', '플라스틱 + 이물질', '비닐 + 이물질', '재사용 유리 + 다중포장재', '갈색 유리 + 다중포장재', '녹색 유리 + 다중포장재', '백색 유리 + 다중포장재', '백색 유리 + 다중포장재', '페트 + 다중포장재', '흰색 스티로폼', '컬러 스티로폼', '스티로폼 + 이물질', '건전지']; // 클래스 이름 배열
 
     // 이미지 예측
     async function predictImage(imageElement) {
@@ -30,28 +34,27 @@
         .toFloat()
         .expandDims();
       let prediction = await model.predict(tensor).data();
-      let topPrediction = Array.from(prediction)
-        .map((p, i) => ({ probability: p, className: i }))
-        .sort((a, b) => b.probability - a.probability)[0];
-      predictionResult.innerText = `Predicted class: ${topPrediction.className} with probability ${topPrediction.probability}`;
+      let topPredictionIndex = Array.from(prediction)
+        .indexOf(Math.max(...prediction));
+      predictionResult.innerText = `Predicted class: ${classNames[topPredictionIndex]} with probability ${prediction[topPredictionIndex]}`;
     }
 
     // 이미지 업로드 이벤트
     imageUpload.addEventListener('change', (event) => {
       const reader = new FileReader();
       reader.onload = () => {
-        const img = new Image();
-        img.src = reader.result;
-        img.onload = () => predictImage(img);
+        uploadedImageSrc = reader.result; // 데이터 URL을 저장
+        uploadedImage.src = uploadedImageSrc; // 업로드된 이미지를 표시
+        uploadedImage.style.display = 'block'; // 이미지를 화면에 표시
       };
       reader.readAsDataURL(event.target.files[0]);
     });
 
     // 예측 버튼 이벤트
     predictButton.addEventListener('click', () => {
-      const imageElement = document.createElement('img');
-      imageElement.src = imageUpload.value;
-      predictImage(imageElement);
+      const imageElement = new Image();
+      imageElement.src = uploadedImageSrc; // 저장된 데이터 URL을 사용
+      imageElement.onload = () => predictImage(imageElement);
     });
 
     loadModel();
